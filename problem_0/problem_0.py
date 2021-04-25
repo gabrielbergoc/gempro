@@ -10,6 +10,8 @@ from guppy import hpy
 hp = hpy()
 hp.setrelheap()
 
+import psutil, os
+
 # to calculate runtime
 from time import time
 before = time()
@@ -93,5 +95,10 @@ with open("output.txt", mode="a") as file:
 after = time()
 print(after - before)   # print runtime
 
+# print memory usage
 h = hp.heap()
-print(h)    # print memory usage
+print(h)
+
+# print memory usage
+process = psutil.Process(os.getpid())
+print('Used memory (in bytes): ' + str(process.memory_info().rss))
