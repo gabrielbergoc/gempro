@@ -69,7 +69,7 @@ def compare_letters(group_a: dict, group_b: dict, letter_mapping: dict) -> dict:
                     letter_mapping[letter_a] = letter_b
 
                 else:                                   # if it is, it means there are 2 possible mappings,
-                    letter_mapping[letter_a] = "?"      # so it's undefined
+                    letter_mapping[letter_a] = "?"      # so it's undefined * bug
                 break
 
     return letter_mapping
