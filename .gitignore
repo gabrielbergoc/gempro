@@ -146,3 +146,5 @@ lib/
 # Rope
 .ropeproject
 /problem_0/other solutions/
+/problem_2/unused_code.py
+/problem_2/graphnode.py

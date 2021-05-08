@@ -21,24 +21,32 @@ def parse_data(data: list) -> dict:
 
         num_clients = data[i][0]
         fee = data[i][1]
-        table = [[0 for _ in range(num_clients)] for __ in range(num_clients)]
 
-        # put zeros as placeholders to match indexes
+        table = [[0 for _ in range(num_clients + 1)] for __ in range(num_clients + 1)]
         for i, j in zip(range(i + 1, i + num_clients + 1), range(num_clients)):
             for k in range(len(data[i])):
-                table[j][k + j] = data[i][k]
+                table[j][k + j + 1] = data[i][k]
 
-        # this will rotate the "matrix" 90 degrees anti-clockwise
-        # for i in range(i + 1, i + num_clients + 1):
-        #     for j, k in zip(range(len(data[i])), range(len(data[i])-1, -1, -1)):
-        #         table[k].append(data[i][j])
+        for x in range(len(table)):
+            for y in range(len(table)):
+                table[y][x] = table[x][y]
+
+        # print_matrix(table)
+        
+        # modifies table of costs and returns a matrix of the shortest paths
+        paths = shortest_path(table)
+        
+        # print_matrix(table)
+        # print_matrix(paths)
 
         # save data from each network into a dictionary
-        networks.update(
-            {network_number: {
+        networks.update({
+            network_number: {
                 "num_clients": num_clients,
                 "fee": fee,
                 "table": table,
+                "paths": paths,
+
                 }
             }
         )
@@ -56,25 +64,37 @@ def solution(networks: dict):
         num_clients = value['num_clients']
         fee = value['fee']
         table = value['table']
+        paths = value['paths']
+        
         pot_init_cap = num_clients * fee    # potential initial capital
 
         output += f"Cable Net #{key}\n{pot_init_cap}\n"
 
         total_linking_cost = 0
         disconnected = 0        # n. of clients not connected of network
-        graph = {}
 
-        # map the graph
-        for i in range(len(table)):
-            for j in range(len(table[i])):
-                cost = table[i][j]
-                if cost > 0:
-                    if not graph.get(i):
-                        graph.update({i: {}})
-                    graph[i].update({j+1: cost})
-        # print(graph)
+        for i in range(1, num_clients + 1):
+            cost = table[0][i]  # look only for paths connected to central
+            next_ = paths[0][i]  # next node of shortest path
 
+            if cost < fee:
+                
+                # while there's a path between central and client
+                while next_ != i:
+                    
+                    # subtract intermediate costs in order to not compute the
+                    # same path more than once
+                    cost -= table[0][next_]
+                    
+                    # look for next node of the path
+                    next_ = paths[next_][i]
 
+                total_linking_cost += cost
+            
+            # if it costs more than subscription fee to link a client to the
+            # network, don't connect this client
+            else:
+                disconnected += 1
 
         # formula for loss in the potential initial capital
         loss = total_linking_cost + (fee * disconnected)
@@ -82,6 +102,43 @@ def solution(networks: dict):
         # save to the output string, then to output file
         output += f"{loss}\n\n"
         save_output(output)
+
+
+# Roy-Floyd-Warshall algorithm to find shortest paths in a graph
+# https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+def shortest_path(dist: list):
+    lenght = len(dist)
+
+    next_ = [[0 for _ in range(lenght)] for __ in range(lenght)]
+    for m in range(lenght):
+        for n in range(lenght):
+            if m == n:
+                next_[m][n] = 0
+            else:
+                next_[m][n] = n
+
+    for k in range(lenght):
+        for i in range(lenght):
+            for j in range(lenght):
+                if dist[i][j] > dist[i][k] + dist[k][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+                    next_[i][j] = next_[i][k]
+
+    return next_
+
+
+# to better view the matrices
+def print_matrix(matrix):
+    print("\t", end="")
+    for n in range(len(matrix)):
+        print(f"{n}\t", end="")
+    print("\n")
+    for x in range(len(matrix)):
+        print(f"{x}\t", end="")
+        for y in range(len(matrix)):
+            print(f"{matrix[x][y]}\t", end="")
+        print("\n")
+    print("\n")
 
 
 def save_output(output):
